@@ -1,0 +1,96 @@
+import mickel.app.codec.project.ByteStream;
+import mickel.app.codec.project.Codec;
+import mickel.app.codec.project.Pixel;
+public class HalfScale implements Codec {
+	
+	@Override
+	public ByteStream pixelsToBytes(Pixel[][] pixels) {
+		int height = pixels.length;
+		int width = pixels[0].length;
+		
+		ByteStream bytes = new ByteStream();
+		bytes.appendInt(height);
+		bytes.appendInt(width);
+		
+		for (int r = 0; r < height; r++) {
+			for (int c = 0; c < width; c+=2) {
+				Pixel p = pixels[r][c];
+
+				bytes.appendByte(p.getRed());
+				bytes.appendByte(p.getGreen());
+				bytes.appendByte(p.getBlue());
+			}
+		}
+		return bytes;
+	}
+	
+	
+	@Override
+	public Pixel[][] bytesToPixels(ByteStream bytes) {
+		if (bytes.available() < 8) { throw new IllegalArgumentException(); }
+		int height = bytes.nextInt();
+		int width = bytes.nextInt();
+		
+		Pixel[][] pixels = new Pixel[height][width];
+		
+		if (bytes.available() < height * width) { throw new IllegalArgumentException(); }
+		for (int r = 0; r < height; r++) {
+			for (int c = 0; c < width; c+=2) {
+				if (c != width-1 ) {
+				
+					int realred = bytes.nextByte();
+					int realgreen = bytes.nextByte();
+					int realblue = bytes.nextByte();
+					
+
+					
+					int halfred = 255 - realred;
+					int halfgreen = 255 - realgreen;
+					int halfblue = 255- realblue;
+						
+					pixels[r][c+1] = new Pixel(halfred, halfgreen, halfblue);
+					pixels[r][c] = new Pixel(realred, realgreen, realblue);	
+				}
+				
+				else
+				{
+					int halfred = bytes.nextByte();
+					int halfgreen = bytes.nextByte();
+					int halfblue = bytes.nextByte();
+					pixels[r][c] = new Pixel(halfred, halfgreen, halfblue);
+				}
+				
+			}
+		}
+	
+		return pixels;
+	}
+	
+	
+	@Override
+	public String getName() { return "Halfscale"; }
+	
+	
+	@Override
+	public String getExtension() { return "half"; }
+	
+	
+	@Override
+	public String getAuthor() { return "Lily Chieng"; }
+	
+	
+	@Override
+	public String getDescription() {
+		return "Encodes a row-major traversal of the image (i.e., " + 
+				"row-by-row, top-to-bottom, left-to-right). Every other " + 
+				"pixel is represented as a 1-byte, weighted halfscale " + 
+				"value, as defined by the Pixel class";
+	}
+	
+	
+	@Override
+	public boolean isLossless() { return false; }
+
+}
+
+
